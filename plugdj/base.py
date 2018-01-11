@@ -26,6 +26,12 @@ class PlugREST(object):
             return req
         return req.json()
 
+    def _delete(self, path, return_req=False, **kwargs):
+        req = self._session.delete(self.to_url(path), **kwargs)
+        if return_req:
+            return req
+        return req.json()
+
     def _get_root(self):
         return self._session.get(urljoin(self.rest_url_base, "/"))
 
@@ -48,8 +54,9 @@ class PlugREST(object):
     def join_room(self, room):
         return self._post("rooms/join", json={"slug": room})
 
-    def user_info(self):
-        return self._get("users/me")
+    def user_info(self, uid=None):
+        return self._get("users/me" if uid is None
+                                    else "users/{:d}".format(uid))
 
     def moderate_skip(self, user_id, history_id):
         json={"userID": user_id, "historyID": history_id}
@@ -121,6 +128,9 @@ class PlugREST(object):
 
     def delete_playlist(self, playlist_id):
         return self._delete("playlists/%s" % playlist_id)
+
+    def get_playlists(self):
+        return self._get("playlists")
 
     def get_playlist_medias(self, playlist_id):
         return self._get("playlists/%s/media" % playlist_id)
@@ -204,6 +214,7 @@ class SockBase(object):
     def pack_msg(self, ty, dat):
         return {"a": ty, "p": dat, "t": ms_since_epoch()}
 
+
 class PlugSock(SockBase):
     """ default ws impl based on ws4py. spawns its own thread. """
 
@@ -225,7 +236,8 @@ class PlugSock(SockBase):
 
                 if callable(self.listener):
                     for msg in msgs:
-                        self.listener(msg)
+                        if msg is not None:
+                            self.listener(msg)
 
             def closed(innerself, code, reason=None):
                 msg = "_ThreadedPlugSock: closed: %r %r" % (code, reason)
