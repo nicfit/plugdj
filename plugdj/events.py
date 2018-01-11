@@ -1,4 +1,3 @@
-from sys import exc_info
 from .util import MalformedEvent
 
 def from_json(js):
@@ -12,10 +11,9 @@ class PlugEvent(object):
         for attr in self.__slots__:
             try:
                 setattr(self, attr, json[attr])
-            except KeyError:
-                _, _, trace = exc_info()
+            except KeyError as ex:
                 msg = "malformed event: " + repr(json)
-                raise MalformedEvent, MalformedEvent(msg), trace
+                raise MalformedEvent(msg) from ex
 
 class AuthAck(PlugEvent):
     __slots__ = ("ack",)
