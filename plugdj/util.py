@@ -1,7 +1,7 @@
 from datetime import datetime
 from logging import getLogger
 from re import search
-from md5 import md5
+from hashlib import md5
 
 logger = getLogger(__name__)
 
