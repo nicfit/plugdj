@@ -100,7 +100,7 @@ class PlugREST(object):
         json = {"userID": user_id, "reason": reason, "duration": duration}
         return self._post("mutes", json=json)
 
-    def moderate_set_role(self):
+    def moderate_set_role(self, user_id, role):
         json = {"userID": user_id, "role": role}
         return self._post("staff/update", json=json)
 
