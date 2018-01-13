@@ -15,6 +15,7 @@ class PlugEvent(object):
                 msg = "malformed event: " + repr(json)
                 raise MalformedEvent(msg) from ex
 
+
 class AuthAck(PlugEvent):
     __slots__ = ("ack",)
     def __init__(self, json):
@@ -26,6 +27,9 @@ class Chat(PlugEvent):
 class Vote(PlugEvent):
     __slots__ = ("i", "v")
 
+class Advance(PlugEvent):
+    __slots__ = ("c", "d", "h", "m", "p", "t")
+
 class UnknownEvent(PlugEvent):
     __slots__ = ("json",)
     def __init__(self, json):
@@ -35,6 +39,7 @@ event_map = {
     "ack": AuthAck,
     "chat": Chat,
     "vote": Vote,
+    "advance": Advance,
 }
 
 """
