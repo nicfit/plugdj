@@ -26,6 +26,12 @@ class PlugREST(object):
             return req
         return req.json()
 
+    def _put(self, path, return_req=False, **kwargs):
+        req = self._session.put(self.to_url(path), **kwargs)
+        if return_req:
+            return req
+        return req.json()
+
     def _delete(self, path, return_req=False, **kwargs):
         req = self._session.delete(self.to_url(path), **kwargs)
         if return_req:
