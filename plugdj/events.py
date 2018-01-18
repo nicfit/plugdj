@@ -7,6 +7,7 @@ def from_json(js):
 # because namedtuple is too restrictive; ignore extras
 class PlugEvent(object):
     __slots__ = ()
+
     def __init__(self, json):
         for attr in self.__slots__:
             try:

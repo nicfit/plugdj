@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 from requests import Session
 from ws4py.client.threadedclient import WebSocketClient
+from .events import from_json
 from .util import js_var, logger, ms_since_epoch, LoginError
 import json
 
@@ -171,6 +172,9 @@ class PlugREST(object):
     def get_all_staff(self):
         return self._get("staff")
 
+    def get_friends(self):
+        return self._get("friends")
+
     def meh(self, history_id):
         # so what happens when abs(direction) != 1?
         json = {"direction": -1, "historyID": history_id}
@@ -183,6 +187,17 @@ class PlugREST(object):
     def grab(self, playlist_id, history_id):
         json = {"playlistID": playlist_id, "historyID": history_id}
         return self._post("grabs", json=json)
+
+    def search_rooms(self, query, page=1, limit=50):
+        return self._get("rooms", params={"page": page, "limit": limit,
+                                          "q": query})
+
+    def get_rooms(self, *, page=1, limit=50):
+        return self._get("rooms", params={"page": page, "limit": limit})
+
+    def get_favorites(self, *, page=1, limit=50):
+        return self._get("rooms/favorites", params={"page": page,
+                                                    "limit": limit})
 
 class SockBase(object):
     """ whose primary purpose is to receive pushes and send chats. """

@@ -1,21 +1,35 @@
 import logging
+from time import sleep
+from pprint import pprint
 from . import PlugDJ
-from .events import from_json, Advance, UnknownEvent
+from .events import from_json, Advance, MalformedEvent
 
 log = logging.getLogger(__name__)
 
 
 class Bot(PlugDJ):
+    FRIEND_IDS = set()
+
     def __init__(self, email, password, room=None):
+        super().__init__(email, password, listener=self)
+
         self._current_room = None
         self._current_tune = None
-        super().__init__(email, password, listener=self)
+        self._me = self.user_info()
+        log.info(f"me: {self._me}")
+        self._friends = self.get_friends()["data"]
+
         if room:
             self.join_room(room)
 
     def __call__(self, event):
         """Web socket event handler."""
-        e = from_json(event)
+        try:
+            e = from_json(event)
+        except MalformedEvent as ex:
+            log.warning(str(ex))
+            return
+
         log.debug("got an event, it was %r" % e)
 
         # Update state
@@ -60,3 +74,8 @@ class Bot(PlugDJ):
 
     def _onJoinRoom(self, room):
         pass
+
+    def isFriend(self, id):
+        return (id in self.FRIEND_IDS or  # Explicit
+                id in  [f["id"] for f in self._friends]  # Plug friends
+        )
