@@ -32,4 +32,5 @@ class PlugDJ(PlugREST):
         return self
 
     def send_chat(self, msg):
-        return self.ws.send_chat(msg)
+        if msg:
+            return self.ws.send_chat(msg)
