@@ -19,24 +19,28 @@ class PlugREST(object):
         req = self._session.post(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _get(self, path, return_req=False, **kwargs):
         req = self._session.get(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _put(self, path, return_req=False, **kwargs):
         req = self._session.put(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _delete(self, path, return_req=False, **kwargs):
         req = self._session.delete(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _get_root(self):
@@ -64,6 +68,9 @@ class PlugREST(object):
     def user_info(self, uid=None):
         return self._get("users/me" if uid is None
                                     else "users/{:d}".format(uid))
+
+    def skip(self):
+        return self._post("booth/skip/me")
 
     def moderate_skip(self, user_id, history_id):
         json={"userID": user_id, "historyID": history_id}
