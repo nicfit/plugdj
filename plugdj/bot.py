@@ -2,7 +2,7 @@ import logging
 from time import sleep
 from pprint import pprint
 from . import PlugDJ
-from .events import from_json, Advance, MalformedEvent
+from .events import from_json, Advance, MalformedEvent, Vote
 
 log = logging.getLogger(__name__)
 
@@ -26,20 +26,27 @@ class Bot(PlugDJ):
         """Web socket event handler."""
         try:
             e = from_json(event)
+            log.debug("got an event, it was %r" % e)
         except MalformedEvent as ex:
             log.warning(str(ex))
             return
 
-        log.debug("got an event, it was %r" % e)
-
         # Update state
+
+        if isinstance(e, Vote):
+            self._current_room["votes"][e.i] = e.v
+
         if isinstance(e, Advance):
+            if self._current_tune is not None:
+                self._onPerformance(self._current_room)
+
             self._current_room["booth"]["currentDJ"] = e.c
             self._current_room["booth"]["waitingDJs"] = e.d
             self._current_room["playback"]["historyID"] = e.h
             self._current_room["playback"]["media"] = e.m
             self._current_room["playback"]["playlistID"] = e.p
             self._current_room["playback"]["startTime"] = e.t
+
             self._current_tune = self._current_room["playback"]
 
         # Invoke handlers
