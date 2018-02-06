@@ -133,15 +133,19 @@ class PlugREST(object):
     def activate_playlist(self, playlist_id):
         return self._put("playlists/%s/activate" % playlist_id)
 
-    def add_song_to_playlist(self, playlist_id, song_id):
-        json = {"media": song_id, "append": True}
-        return self._get("playlists/%s/media/insert" % playlist_id, json=json)
+    def add_song_to_playlist(self, playlist_id, media, append=True):
+        json = {"media": [media], "append": append}
+        return self._post("playlists/%s/media/insert" % playlist_id, json=json)
 
     def create_playlist(self, name):
         return self._post("playlists", json={"name": name})
 
     def delete_playlist(self, playlist_id):
         return self._delete("playlists/%s" % playlist_id)
+
+    def delete_playlist_media(self, playlist_id, *ids):
+        json = {"ids": list(ids)}
+        return self._post("playlists/%s/media/delete" % playlist_id, json=json)
 
     def get_playlists(self):
         return self._get("playlists")
