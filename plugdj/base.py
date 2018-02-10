@@ -80,8 +80,8 @@ class PlugREST(object):
         """ assumes already connected to room."""
         return self._get("rooms/state")
 
-    def chat_delete(self):
-        raise NotImplemented("chat/")
+    def chat_delete(self, msg_id):
+        return self._delete(f"/chat/{msg_id}")
 
     def room_history(self):
         return self._get("rooms/history")
