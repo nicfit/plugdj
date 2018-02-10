@@ -17,6 +17,7 @@ class Bot(PlugDJ):
         self._current_room = None
         self._current_tune = None
         self._active_playlist = None
+        self._listeners = []
 
         # Prime caches
         self._me = self.user_info()["data"][0]
@@ -33,6 +34,12 @@ class Bot(PlugDJ):
 
     def get_owner(self):
         return self.user_info(self.OWNER_ID) if self.OWNER_ID else None
+
+    def is_user_in_room(self, user_id: int):
+        for u in self.current_room["users"]:
+            if u["id"] == user_id:
+                return True
+        return False
 
     def __call__(self, event):
         """Web socket event handler."""
@@ -62,11 +69,17 @@ class Bot(PlugDJ):
             self._current_tune = self._current_room["playback"]
 
         # Invoke handlers
-        handler = f"_on{e.__class__.__name__}Event"
-        if hasattr(self, handler):
-            getattr(self, handler)(e)
-        else:
-            log.debug(f"Event {handler} method not defined")
+        for listener in [self] + self._listeners:
+            handler = f"_on{e.__class__.__name__}Event"
+            if hasattr(listener, handler):
+                try:
+                    getattr(listener, handler)(e)
+                except Exception as ex:
+                    log.error(f"Error in event callback {listener}.{handler}",
+                              exc_info=ex)
+            else:
+                log.debug(f"Event {handler} method not defined for listener: "
+                          f"{listener}")
 
     def get_friends(self):
         r = super().get_friends()
@@ -74,7 +87,7 @@ class Bot(PlugDJ):
         return r
 
     def get_friend(self, friend_id):
-        for f in self._friends:
+        for f in self.get_friends():
             if f["id"] == friend_id:
                 return f
         return None
@@ -141,6 +154,14 @@ class Bot(PlugDJ):
         self.room_state()  # Update
         self._onJoinRoom(self._current_room)
         return r
+
+    def add_listener(self, listener):
+        if listener not in self._listeners:
+            self._listeners.append(listener)
+
+    def remove_listener(self, listener):
+        if listener in self._listeners:
+            self._listeners.remove(listener)
 
     @property
     def current_room(self):
