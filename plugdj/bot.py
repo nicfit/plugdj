@@ -87,7 +87,7 @@ class Bot(PlugDJ):
         return r
 
     def get_friend(self, friend_id):
-        for f in self.get_friends():
+        for f in self.get_friends()["data"]:
             if f["id"] == friend_id:
                 return f
         return None
