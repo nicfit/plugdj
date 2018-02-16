@@ -115,7 +115,7 @@ class PlugREST(object):
         return self._post("mutes", json=json)
 
     def moderate_set_role(self, user_id, role):
-        json = {"userID": user_id, "role": role}
+        json = {"userID": user_id, "roleID": role}
         return self._post("staff/update", json=json)
 
     def moderate_remove_dj(self, user_id):
@@ -143,6 +143,10 @@ class PlugREST(object):
     def delete_playlist(self, playlist_id):
         return self._delete("playlists/%s" % playlist_id)
 
+    def rename_playlist(self, playlist_id, new_name):
+        return self._put("playlists/%s/rename" % playlist_id,
+                         json={"name": new_name})
+
     def delete_playlist_media(self, playlist_id, *ids):
         json = {"ids": list(ids)}
         return self._post("playlists/%s/media/delete" % playlist_id, json=json)
@@ -156,8 +160,9 @@ class PlugREST(object):
     def shuffle_playlist(self, playlist_id):
         return self._put("playlists/%s/shuffle" % playlist_id)
 
-    def room_cycle_booth(self):
-        raise NotImplemented("booth/cycle")
+    def moderate_cycle_booth(self, should_cycle):
+        json = {"shouldCycle": bool(should_cycle)}
+        return self._put("booth/cycle", json=json)
 
     def change_room_info(self, name, description, welcome_msg):
         json = {"name": name, "description": description, "welcome":
@@ -165,8 +170,8 @@ class PlugREST(object):
         return self._post("rooms/update", json=json)
 
     def moderate_lock_wait_list(self, locked, clear):
-        return self._put("booth/lock", json={"isLocked": locked,
-                                             "removeAllDJs": clear})
+        return self._put("booth/lock", json={"isLocked": bool(locked),
+                                             "removeAllDJs": bool(clear)})
 
     def user_get_avatars(self):
         return self._get("store/inventory/avatars")
@@ -209,6 +214,12 @@ class PlugREST(object):
     def get_favorites(self, *, page=1, limit=50):
         return self._get("rooms/favorites", params={"page": page,
                                                     "limit": limit})
+
+    def unfavorite(self, room_id):
+        return self._delete("rooms/favorites/{:d}".format(room_id))
+
+    def favorite(self, room_id):
+        return self._post("rooms/favorites", json={"id": room_id})
 
 class SockBase(object):
     """ whose primary purpose is to receive pushes and send chats. """
