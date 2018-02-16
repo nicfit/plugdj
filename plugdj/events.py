@@ -1,32 +1,48 @@
-from sys import exc_info
 from .util import MalformedEvent
 
 def from_json(js):
-    ev_class = event_map.get(js.get("a"))
-    return UnknownEvent(js) if ev_class is None else ev_class(js.get("p"))
+    EventClass = event_map.get(js.get("a"))
+    return EventClass(js) if EventClass is not None else UnknownEvent(js)
 
 # because namedtuple is too restrictive; ignore extras
 class PlugEvent(object):
     __slots__ = ()
+
     def __init__(self, json):
         for attr in self.__slots__:
             try:
-                setattr(self, attr, json[attr])
-            except KeyError:
-                _, _, trace = exc_info()
+                p = json["p"]
+                setattr(self, attr, p[attr] if hasattr(p, "__getitem__") else p)
+            except KeyError as ex:
                 msg = "malformed event: " + repr(json)
-                raise MalformedEvent, MalformedEvent(msg), trace
+                raise MalformedEvent(msg) from ex
+
 
 class AuthAck(PlugEvent):
     __slots__ = ("ack",)
     def __init__(self, json):
-        self.ack = json
+        self.ack = json["p"]
 
 class Chat(PlugEvent):
     __slots__ = ("cid", "message", "uid", "un")
 
 class Vote(PlugEvent):
     __slots__ = ("i", "v")
+
+class Advance(PlugEvent):
+    __slots__ = ("c", "d", "h", "m", "p", "t")
+
+class UserJoin(PlugEvent):
+    __slots__ = ("user", "room_slug")
+    def __init__(self, json):
+        self.user = json["p"]
+        self.room_slug = json["s"]
+
+class UserLeave(PlugEvent):
+    __slots__ = ("user_id", "room_slug")
+    def __init__(self, json):
+        self.user_id = json["p"]
+        self.room_slug = json["s"]
 
 class UnknownEvent(PlugEvent):
     __slots__ = ("json",)
@@ -37,6 +53,9 @@ event_map = {
     "ack": AuthAck,
     "chat": Chat,
     "vote": Vote,
+    "advance": Advance,
+    "userJoin": UserJoin,
+    "userLeave": UserLeave,
 }
 
 """

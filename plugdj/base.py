@@ -1,6 +1,7 @@
-from urlparse import urljoin
+from urllib.parse import urljoin
 from requests import Session
 from ws4py.client.threadedclient import WebSocketClient
+from .events import from_json
 from .util import js_var, logger, ms_since_epoch, LoginError
 import json
 
@@ -18,12 +19,28 @@ class PlugREST(object):
         req = self._session.post(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _get(self, path, return_req=False, **kwargs):
         req = self._session.get(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
+        return req.json()
+
+    def _put(self, path, return_req=False, **kwargs):
+        req = self._session.put(self.to_url(path), **kwargs)
+        if return_req:
+            return req
+        req.raise_for_status()
+        return req.json()
+
+    def _delete(self, path, return_req=False, **kwargs):
+        req = self._session.delete(self.to_url(path), **kwargs)
+        if return_req:
+            return req
+        req.raise_for_status()
         return req.json()
 
     def _get_root(self):
@@ -48,8 +65,12 @@ class PlugREST(object):
     def join_room(self, room):
         return self._post("rooms/join", json={"slug": room})
 
-    def user_info(self):
-        return self._get("users/me")
+    def user_info(self, uid=None):
+        return self._get("users/me" if uid is None
+                                    else "users/{:d}".format(uid))
+
+    def skip(self):
+        return self._post("booth/skip/me")
 
     def moderate_skip(self, user_id, history_id):
         json={"userID": user_id, "historyID": history_id}
@@ -59,8 +80,8 @@ class PlugREST(object):
         """ assumes already connected to room."""
         return self._get("rooms/state")
 
-    def chat_delete(self):
-        raise NotImplemented("chat/")
+    def chat_delete(self, msg_id):
+        return self._delete(f"/chat/{msg_id}")
 
     def room_history(self):
         return self._get("rooms/history")
@@ -93,8 +114,8 @@ class PlugREST(object):
         json = {"userID": user_id, "reason": reason, "duration": duration}
         return self._post("mutes", json=json)
 
-    def moderate_set_role(self):
-        json = {"userID": user_id, "role": role}
+    def moderate_set_role(self, user_id, role):
+        json = {"userID": user_id, "roleID": role}
         return self._post("staff/update", json=json)
 
     def moderate_remove_dj(self, user_id):
@@ -112,9 +133,9 @@ class PlugREST(object):
     def activate_playlist(self, playlist_id):
         return self._put("playlists/%s/activate" % playlist_id)
 
-    def add_song_to_playlist(self, playlist_id, song_id):
-        json = {"media": song_id, "append": True}
-        return self._get("playlists/%s/media/insert" % playlist_id, json=json)
+    def add_song_to_playlist(self, playlist_id, media, append=True):
+        json = {"media": [media], "append": append}
+        return self._post("playlists/%s/media/insert" % playlist_id, json=json)
 
     def create_playlist(self, name):
         return self._post("playlists", json={"name": name})
@@ -122,14 +143,26 @@ class PlugREST(object):
     def delete_playlist(self, playlist_id):
         return self._delete("playlists/%s" % playlist_id)
 
+    def rename_playlist(self, playlist_id, new_name):
+        return self._put("playlists/%s/rename" % playlist_id,
+                         json={"name": new_name})
+
+    def delete_playlist_media(self, playlist_id, *ids):
+        json = {"ids": list(ids)}
+        return self._post("playlists/%s/media/delete" % playlist_id, json=json)
+
+    def get_playlists(self):
+        return self._get("playlists")
+
     def get_playlist_medias(self, playlist_id):
         return self._get("playlists/%s/media" % playlist_id)
 
     def shuffle_playlist(self, playlist_id):
         return self._put("playlists/%s/shuffle" % playlist_id)
 
-    def room_cycle_booth(self):
-        raise NotImplemented("booth/cycle")
+    def moderate_cycle_booth(self, should_cycle):
+        json = {"shouldCycle": bool(should_cycle)}
+        return self._put("booth/cycle", json=json)
 
     def change_room_info(self, name, description, welcome_msg):
         json = {"name": name, "description": description, "welcome":
@@ -137,8 +170,8 @@ class PlugREST(object):
         return self._post("rooms/update", json=json)
 
     def moderate_lock_wait_list(self, locked, clear):
-        return self._put("booth/lock", json={"isLocked": locked,
-                                             "removeAllDJs": clear})
+        return self._put("booth/lock", json={"isLocked": bool(locked),
+                                             "removeAllDJs": bool(clear)})
 
     def user_get_avatars(self):
         return self._get("store/inventory/avatars")
@@ -155,6 +188,9 @@ class PlugREST(object):
     def get_all_staff(self):
         return self._get("staff")
 
+    def get_friends(self):
+        return self._get("friends")
+
     def meh(self, history_id):
         # so what happens when abs(direction) != 1?
         json = {"direction": -1, "historyID": history_id}
@@ -167,6 +203,23 @@ class PlugREST(object):
     def grab(self, playlist_id, history_id):
         json = {"playlistID": playlist_id, "historyID": history_id}
         return self._post("grabs", json=json)
+
+    def search_rooms(self, query, page=1, limit=50):
+        return self._get("rooms", params={"page": page, "limit": limit,
+                                          "q": query})
+
+    def get_rooms(self, *, page=1, limit=50):
+        return self._get("rooms", params={"page": page, "limit": limit})
+
+    def get_favorites(self, *, page=1, limit=50):
+        return self._get("rooms/favorites", params={"page": page,
+                                                    "limit": limit})
+
+    def unfavorite(self, room_id):
+        return self._delete("rooms/favorites/{:d}".format(room_id))
+
+    def favorite(self, room_id):
+        return self._post("rooms/favorites", json={"id": room_id})
 
 class SockBase(object):
     """ whose primary purpose is to receive pushes and send chats. """
@@ -204,6 +257,7 @@ class SockBase(object):
     def pack_msg(self, ty, dat):
         return {"a": ty, "p": dat, "t": ms_since_epoch()}
 
+
 class PlugSock(SockBase):
     """ default ws impl based on ws4py. spawns its own thread. """
 
@@ -225,7 +279,8 @@ class PlugSock(SockBase):
 
                 if callable(self.listener):
                     for msg in msgs:
-                        self.listener(msg)
+                        if msg is not None:
+                            self.listener(msg)
 
             def closed(innerself, code, reason=None):
                 msg = "_ThreadedPlugSock: closed: %r %r" % (code, reason)
