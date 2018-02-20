@@ -1,3 +1,4 @@
+from . import _PY2
 from datetime import datetime
 from logging import getLogger
 from re import search
@@ -11,7 +12,12 @@ class ServerShenanigans(Exception): pass
 
 class InvalidLogin(Exception):
     def __init__(self, email, pw):
-        msg = "email = %s; md5(password) = %s" % (email, md5(pw).hexdigest())
+        if not _PY2:
+            msg = "email = %s; md5(password) = %s" %\
+                  (email, md5(pw.encode("utf-8")).hexdigest())
+        else:
+            msg = "email = %s; md5(password) = %s" %\
+                  (email, md5(pw).hexdigest())
         super(InvalidLogin, self).__init__(msg)
 
 class LoginError(Exception): pass

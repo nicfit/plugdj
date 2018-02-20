@@ -1,4 +1,8 @@
-from urllib.parse import urljoin
+from . import _PY2
+if not _PY2:
+    from urllib.parse import urljoin
+else:
+    from urlparse import urljoin
 from requests import Session
 from ws4py.client.threadedclient import WebSocketClient
 from .events import from_json
@@ -81,7 +85,7 @@ class PlugREST(object):
         return self._get("rooms/state")
 
     def chat_delete(self, msg_id):
-        return self._delete(f"/chat/{msg_id}")
+        return self._delete("/chat/{msg_id}".format(**locals()))
 
     def room_history(self):
         return self._get("rooms/history")
@@ -208,10 +212,10 @@ class PlugREST(object):
         return self._get("rooms", params={"page": page, "limit": limit,
                                           "q": query})
 
-    def get_rooms(self, *, page=1, limit=50):
+    def get_rooms(self, page=1, limit=50):
         return self._get("rooms", params={"page": page, "limit": limit})
 
-    def get_favorites(self, *, page=1, limit=50):
+    def get_favorites(self, page=1, limit=50):
         return self._get("rooms/favorites", params={"page": page,
                                                     "limit": limit})
 

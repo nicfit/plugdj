@@ -1,3 +1,6 @@
+import sys
+_PY2 = sys.version_info.major == 2
+import requests.exceptions
 from .events import from_json
 from .util import js_var, InvalidLogin, logger
 from .base import SockBase, PlugREST, PlugSock
@@ -12,8 +15,14 @@ class PlugDJ(PlugREST):
         self.ws = self.login(email, password).acquire_socket(listener)
 
     def login(self, email, password):
-        if super(PlugDJ, self).login(email, password).get("status") != "ok":
-            raise InvalidLogin(email, password)
+        try:
+            if super(PlugDJ, self).login(email, password).get("status") != "ok":
+                raise InvalidLogin(email, password)
+        except requests.exceptions.HTTPError as err:
+            if err.response.status_code == 401:
+                raise InvalidLogin(email, password)
+            raise
+
         return self
         # ^ socket acquisition should happen immediately after
 

@@ -15,7 +15,7 @@ class PlugEvent(object):
                 setattr(self, attr, p[attr] if hasattr(p, "__getitem__") else p)
             except KeyError as ex:
                 msg = "malformed event: " + repr(json)
-                raise MalformedEvent(msg) from ex
+                raise MalformedEvent(msg)
 
 
 class AuthAck(PlugEvent):
