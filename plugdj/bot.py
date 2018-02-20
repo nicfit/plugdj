@@ -128,6 +128,11 @@ class Bot(PlugDJ):
         self.get_playlists()
         return r
 
+    def rename_playlist(self, playlist_id, new_name):
+        r = super().rename_playlist(playlist_id, new_name)
+        self.get_playlists()
+        return r
+
     def activate_playlist(self, plid):
         r = super().activate_playlist(plid)
         self._active_playlist = plid
