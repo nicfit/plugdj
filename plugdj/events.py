@@ -53,11 +53,11 @@ class UnknownEvent(PlugEvent):
 
 event_map = {
     "ack": AuthAck,
-    "chat": Chat,
-    "vote": Vote,
     "advance": Advance,
+    "chat": Chat,
     "userJoin": UserJoin,
     "userLeave": UserLeave,
+    "vote": Vote,
 }
 
 """
