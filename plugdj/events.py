@@ -1,8 +1,10 @@
 from .util import MalformedEvent
 
+
 def from_json(js):
     EventClass = event_map.get(js.get("a"))
     return EventClass(js) if EventClass is not None else UnknownEvent(js)
+
 
 # because namedtuple is too restrictive; ignore extras
 class PlugEvent(object):
@@ -11,11 +13,11 @@ class PlugEvent(object):
     def __init__(self, json):
         for attr in self.__slots__:
             try:
-                p = json["p"]
-                setattr(self, attr, p[attr] if hasattr(p, "__getitem__") else p)
+                setattr(self, attr, json["p"][attr])
             except KeyError as ex:
+                from six import  raise_from
                 msg = "malformed event: " + repr(json)
-                raise MalformedEvent(msg)
+                raise_from(MalformedEvent(msg), ex)
 
 
 class AuthAck(PlugEvent):
