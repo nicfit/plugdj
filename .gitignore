@@ -6,3 +6,5 @@
 _creds.py
 misc
 .idea/
+.tox/
+.eggs/
