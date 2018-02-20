@@ -58,9 +58,6 @@ event_map = {
     "userJoin": UserJoin,
     "userLeave": UserLeave,
     "vote": Vote,
-    "advance": Advance,
-    "userJoin": UserJoin,
-    "userLeave": UserLeave,
 }
 
 """
