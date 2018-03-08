@@ -195,6 +195,22 @@ class PlugREST(object):
     def get_friends(self):
         return self._get("friends")
 
+    def request_friend(self, user_id):
+        return self._post("friends", json={"id": user_id})
+
+    def delete_friend(self, user_id):
+        return self._delete("friends/%d" % user_id)
+
+    def get_invites(self):
+        return self._get("friends/invites")
+
+    def accept_friend_request(self, user_id):
+        return self.request_friend(user_id)
+        #return self._post("friends", json={"id": user_id})
+
+    def reject_friend_request(self, user_id):
+        return self._put("friends/ignore", json={"id": user_id})
+
     def meh(self, history_id):
         # so what happens when abs(direction) != 1?
         json = {"direction": -1, "historyID": history_id}
