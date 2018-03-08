@@ -1,7 +1,5 @@
 import logging
 import threading
-from time import sleep
-from pprint import pprint
 from . import PlugDJ
 from .events import from_json, Advance, MalformedEvent, Vote
 
@@ -191,7 +189,8 @@ class Bot(PlugDJ):
     def _onJoinRoom(self, room_json):
         log.debug(f"_onJoinRoom: {room_json}")
 
-    def _sched(self, secs, func, args=None, kwargs=None):
+    @staticmethod
+    def _sched(secs, func, args=None, kwargs=None):
         t = threading.Timer(secs, func, args or [], kwargs or {})
         t.start()
         return t
