@@ -1,3 +1,4 @@
+import requests.exceptions
 from plugdj import PlugDJ
 from plugdj.util import InvalidLogin
 from nose import tools
@@ -29,7 +30,8 @@ def test_user_info():
 
 @tools.raises(InvalidLogin)
 def test_fail_login():
-    PlugDJ("bogus", "reallybogus")
+    tools.assert_raises(requests.exceptions.HTTPError,
+                        PlugDJ, "bogus", "reallybogus")
 
 def test_get_room_state():
     assert is_ok(p.join_room(creds.room))

@@ -1,6 +1,7 @@
 from urlparse import urljoin
 from requests import Session
 from ws4py.client.threadedclient import WebSocketClient
+from .events import from_json
 from .util import js_var, logger, ms_since_epoch, LoginError
 import json
 
@@ -18,12 +19,14 @@ class PlugREST(object):
         req = self._session.post(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _get(self, path, return_req=False, **kwargs):
         req = self._session.get(self.to_url(path), **kwargs)
         if return_req:
             return req
+        req.raise_for_status()
         return req.json()
 
     def _get_root(self):
@@ -93,8 +96,8 @@ class PlugREST(object):
         json = {"userID": user_id, "reason": reason, "duration": duration}
         return self._post("mutes", json=json)
 
-    def moderate_set_role(self):
-        json = {"userID": user_id, "role": role}
+    def moderate_set_role(self, user_id, role):
+        json = {"userID": user_id, "roleID": role}
         return self._post("staff/update", json=json)
 
     def moderate_remove_dj(self, user_id):
@@ -203,6 +206,7 @@ class SockBase(object):
 
     def pack_msg(self, ty, dat):
         return {"a": ty, "p": dat, "t": ms_since_epoch()}
+
 
 class PlugSock(SockBase):
     """ default ws impl based on ws4py. spawns its own thread. """
