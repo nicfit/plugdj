@@ -14,6 +14,9 @@ class PlugEvent(object):
         for attr in self.__slots__:
             try:
                 setattr(self, attr, json["p"][attr])
+                p = json["p"]
+                # Certain events (e.g. friendRequest) have non-dict p values...
+                setattr(self, attr, p[attr] if hasattr(p, "__getitem__") else p)
             except KeyError as ex:
                 from six import  raise_from
                 msg = "malformed event: " + repr(json)
@@ -46,6 +49,11 @@ class UserLeave(PlugEvent):
         self.user_id = json["p"]
         self.room_slug = json["s"]
 
+
+class FriendRequest(PlugEvent):
+    __slots__ = ("p")
+
+
 class UnknownEvent(PlugEvent):
     __slots__ = ("json",)
     def __init__(self, json):
@@ -55,6 +63,7 @@ event_map = {
     "ack": AuthAck,
     "advance": Advance,
     "chat": Chat,
+    "friendRequest": FriendRequest,
     "userJoin": UserJoin,
     "userLeave": UserLeave,
     "vote": Vote,
