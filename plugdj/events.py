@@ -13,7 +13,6 @@ class PlugEvent(object):
     def __init__(self, json):
         for attr in self.__slots__:
             try:
-                setattr(self, attr, json["p"][attr])
                 p = json["p"]
                 # Certain events (e.g. friendRequest) have non-dict p values...
                 setattr(self, attr, p[attr] if hasattr(p, "__getitem__") else p)
@@ -54,6 +53,10 @@ class FriendRequest(PlugEvent):
     __slots__ = ("p")
 
 
+class Skip(PlugEvent):
+    __slots__ = ("uid")
+
+
 class UnknownEvent(PlugEvent):
     __slots__ = ("json",)
     def __init__(self, json):
@@ -67,6 +70,7 @@ event_map = {
     "userJoin": UserJoin,
     "userLeave": UserLeave,
     "vote": Vote,
+    "skip": Skip,
 }
 
 """
