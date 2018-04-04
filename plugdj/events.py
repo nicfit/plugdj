@@ -54,7 +54,7 @@ class FriendRequest(PlugEvent):
 
 
 class Skip(PlugEvent):
-    __slots__ = ("uid")
+    __slots__ = ("uid",)
 
 
 class UnknownEvent(PlugEvent):
