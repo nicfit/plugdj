@@ -1,5 +1,6 @@
 import logging
 import threading
+from datetime import datetime, timedelta
 from . import PlugDJ
 from .events import from_json, Advance, MalformedEvent, Vote
 
@@ -55,7 +56,7 @@ class Bot(PlugDJ):
 
         if isinstance(e, Advance):
             if self._current_tune is not None:
-                self._onPerformance(self._current_room)
+                self._callHandlers("Performance", self.current_room)
 
             self._current_room["booth"]["currentDJ"] = e.c
             self._current_room["booth"]["waitingDJs"] = e.d
@@ -66,12 +67,15 @@ class Bot(PlugDJ):
 
             self._current_tune = self._current_room["playback"]
 
-        # Invoke handlers
+        # Invoke handlers for the raw event
+        self._callHandlers(e.__class__.__name__, e)
+
+    def _callHandlers(self, event, data):
+        handler = f"_on{event}Event"
         for listener in [self] + self._listeners:
-            handler = f"_on{e.__class__.__name__}Event"
             if hasattr(listener, handler):
                 try:
-                    getattr(listener, handler)(e)
+                    getattr(listener, handler)(data)
                 except Exception as ex:
                     log.error(f"Error in event callback {listener}.{handler}",
                               exc_info=ex)
@@ -94,27 +98,6 @@ class Bot(PlugDJ):
         return (id in self.FRIEND_IDS or  # Explicit
                 id in  [f["id"] for f in self._friends]  # Plug friends
                )
-
-    def get_playlists(self):
-        r = super().get_playlists()
-        self._playlists = {}
-        for pl in r["data"]:
-            self._playlists[pl["id"]] = pl
-            self._playlists[pl["name"]] = pl
-            if pl["active"]:
-                self._active_playlist = pl["id"]
-        return r
-
-    def get_playlist(self, name):
-        """Get a playlist. `name` may be a string name or int ID."""
-        if name in self._playlists:
-            return self._playlists[name]
-        else:
-            try:
-                return self._playlists[int(name)]
-            except:
-                pass
-            return None
 
     def create_playlist(self, name):
         r = super().create_playlist(name)
@@ -146,7 +129,7 @@ class Bot(PlugDJ):
     def room_state(self):
         r = super().room_state()
         self._current_room = r["data"][0]
-        if self._current_room and "playback" in self.current_room:
+        if self._current_room and "playback" in self._current_room:
             self._current_tune = self._current_room["playback"] or None
         else:
             self._current_tune = None
@@ -181,10 +164,6 @@ class Bot(PlugDJ):
     @property
     def friends(self):
         return self._friends
-
-    @property
-    def playlists(self):
-        return list({v['id']: v for v in self._playlists.values()}.values())
 
     def _onJoinRoom(self, room_json):
         log.debug(f"_onJoinRoom: {room_json}")

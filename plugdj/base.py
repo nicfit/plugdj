@@ -164,6 +164,11 @@ class PlugREST(object):
     def shuffle_playlist(self, playlist_id):
         return self._put("playlists/%s/shuffle" % playlist_id)
 
+    def move_media(self, playlist_id, before_media_id, *ids):
+        json = {"ids": ids,
+                "beforeID": before_media_id}
+        return self._put("playlists/%s/media/move" % playlist_id, json=json)
+
     def moderate_cycle_booth(self, should_cycle):
         json = {"shouldCycle": bool(should_cycle)}
         return self._put("booth/cycle", json=json)
