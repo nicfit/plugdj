@@ -14,8 +14,8 @@ class PlugEvent(object):
         for attr in self.__slots__:
             try:
                 p = json["p"]
-                # Certain events (e.g. friendRequest) have non-dict p values...
-                setattr(self, attr, p[attr] if hasattr(p, "__getitem__") else p)
+                # Certain events (e.g. friendRequest) have non-dict p values
+                setattr(self, attr, p[attr] if isinstance(p, dict) else p)
             except KeyError as ex:
                 from six import  raise_from
                 msg = "malformed event: " + repr(json)
