@@ -37,15 +37,6 @@ def test_get_room_state():
     assert is_ok(p.join_room(creds.room))
     assert is_ok(p.room_state())
 
-
-def test_get_bans():
-    resp = p._get("bans")
-    assert resp["status"] == "ok"
-    assert "data" in resp
-    assert "meta" in resp
-    assert "time" in resp
-
-
 # cached instance for tests that don't require a fresh one
 p = None
 def setup_module():
