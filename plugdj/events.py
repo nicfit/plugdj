@@ -9,58 +9,91 @@ def from_json(js):
 # because namedtuple is too restrictive; ignore extras
 class PlugEvent(object):
     __slots__ = ()
+    __attr_map__ = {}
 
     def __init__(self, json):
+        p = None
+        try:
+            p = json["p"]
+        except KeyError as ex:
+            from six import raise_from
+            msg = "malformed event: " + repr(json)
+            raise_from(MalformedEvent(msg), ex)
+        assert p is not None
+
         for attr in self.__slots__:
-            try:
-                p = json["p"]
-                # Certain events (e.g. friendRequest) have non-dict p values
-                setattr(self, attr, p[attr] if isinstance(p, dict) else p)
-            except KeyError as ex:
-                from six import  raise_from
-                msg = "malformed event: " + repr(json)
-                raise_from(MalformedEvent(msg), ex)
+            slot = attr
+            attr = self.__attr_map__[attr] if attr in self.__attr_map__ else attr
+
+            if isinstance(p, dict) and attr in p:
+                setattr(self, slot, p[attr])
+            elif attr in json:
+                setattr(self, slot, json[attr])
+            else:
+                breakpoint()
+                raise NotImplementedError("FIXME")
 
 
 class AuthAck(PlugEvent):
     __slots__ = ("ack",)
-    def __init__(self, json):
-        self.ack = json["p"]
+    __attr_map__ = {"ack": "p"}
+
 
 class Chat(PlugEvent):
     __slots__ = ("cid", "message", "uid", "un")
 
+
 class Vote(PlugEvent):
     __slots__ = ("i", "v")
 
+
 class Advance(PlugEvent):
-    __slots__ = ("c", "d", "h", "m", "p", "t")
+    __slots__ = ("c", "d", "h", "media", "p", "t", "s")
+    __attr_map__ = {
+        "media": "m",
+    }
+
 
 class UserJoin(PlugEvent):
-    __slots__ = ("user", "room_slug")
-    def __init__(self, json):
-        self.user = json["p"]
-        self.room_slug = json["s"]
+    __slots__ = ("user_id", "room_slug")
+    __attr_map__ = {"user_id": "p", "room_slug": "s"}
+
 
 class UserLeave(PlugEvent):
     __slots__ = ("user_id", "room_slug")
-    def __init__(self, json):
-        self.user_id = json["p"]
-        self.room_slug = json["s"]
+    __attr_map__ = {"user_id": "p", "room_slug": "s"}
 
 
 class FriendRequest(PlugEvent):
-    __slots__ = ("p")
+    __slots__ = ("p",)
 
 
 class Skip(PlugEvent):
     __slots__ = ("uid",)
 
 
+class PlaylistCycle(PlugEvent):
+    __slots__ = ("playlist", "room")
+    __attr_map__ = {"playlist": "p",
+                    "room": "s"}
+
+
+class Earn(PlugEvent):
+    """
+    {"a":"earn","p":{"pp":186444,"xp":42345,"level":11},"s":"dashboard"}
+    """
+    __slots__ = ("level", "xp", "pp")
+
+
+#class ListUpdate(PlugEvent):
+
+
 class UnknownEvent(PlugEvent):
     __slots__ = ("json",)
+
     def __init__(self, json):
         self.json = json
+
 
 event_map = {
     "ack": AuthAck,
@@ -71,10 +104,11 @@ event_map = {
     "userLeave": UserLeave,
     "vote": Vote,
     "skip": Skip,
+    "playlistCycle": PlaylistCycle,
+    "earn": Earn,
 }
 
 """
-    ADVANCE: 'advance',
     BAN: 'ban',
     BOOTH_LOCKED: 'boothLocked',
     CHAT: 'chat',
@@ -85,7 +119,6 @@ event_map = {
     DJ_LIST_CYCLE: 'djListCycle',
     DJ_LIST_UPDATE: 'djListUpdate',
     DJ_LIST_LOCKED: 'djListLocked',
-    EARN: 'earn',
     FOLLOW_JOIN: 'followJoin',
     FLOOD_CHAT: 'floodChat',
     GRAB: 'grab',

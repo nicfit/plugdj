@@ -1,17 +1,13 @@
-from . import _PY2
-if not _PY2:
-    from urllib.parse import urljoin
-else:
-    from urlparse import urljoin
+import time
+from urllib.parse import urljoin
 from requests import Session
 from ws4py.client.threadedclient import WebSocketClient
 from .events import from_json
 from .util import js_var, logger, ms_since_epoch, LoginError
 import json
 
-class PlugREST(object):
-    #justrestthings
 
+class PlugREST(object):
     rest_url_base = "https://plug.dj"
 
     def __init__(self):
@@ -246,6 +242,7 @@ class PlugREST(object):
     def favorite(self, room_id):
         return self._post("rooms/favorites", json={"id": room_id})
 
+
 class SockBase(object):
     """ whose primary purpose is to receive pushes and send chats. """
 
@@ -290,12 +287,18 @@ class PlugSock(SockBase):
     _send = lambda self, m: self.socket.send(m)
 
     def __init__(self, auth, listener, **kwargs):
+
         class _ThreadedPlugSock(WebSocketClient):
+            last_ping = None
+
             def opened(innerself):
                 self.authenticate(self.auth)
 
             def received_message(innerself, msg):
                 logger.debug("_ThreadedPlugSock: received %r" % msg.data)
+
+                if msg.data == b"h":
+                    innerself.last_ping = time.time()
 
                 try:
                     msgs = json.loads(str(msg))

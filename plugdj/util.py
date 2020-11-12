@@ -1,4 +1,3 @@
-from . import _PY2
 from datetime import datetime
 from logging import getLogger
 from re import search
@@ -6,21 +5,21 @@ from hashlib import md5
 
 logger = getLogger(__name__)
 
+
 class MalformedEvent(Exception): pass
+
 
 class ServerShenanigans(Exception): pass
 
+
 class InvalidLogin(Exception):
     def __init__(self, email, pw):
-        if not _PY2:
-            msg = "email = %s; md5(password) = %s" %\
-                  (email, md5(pw.encode("utf-8")).hexdigest())
-        else:
-            msg = "email = %s; md5(password) = %s" %\
-                  (email, md5(pw).hexdigest())
+        msg = "email = %s; md5(password) = %s" % (email, md5(pw.encode("utf-8")).hexdigest())
         super(InvalidLogin, self).__init__(msg)
 
+
 class LoginError(Exception): pass
+
 
 def js_var(var, raw):
     """ really hacky-hack helper to extract js str var decls. """
@@ -28,10 +27,12 @@ def js_var(var, raw):
     match = search(lestr, raw)
     return None if match is None else match.group(1)
 
+
 def ms_since_epoch(dt=None):
     dt = dt or datetime.now()
     delta = (dt - datetime(1970, 1, 1))
     return int(round(delta.total_seconds() * 1000))
+
 
 def expect_obj(expected, actual):
     """ handy hack that checks json dicts surjectively. """

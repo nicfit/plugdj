@@ -1,9 +1,8 @@
-import sys
-_PY2 = sys.version_info.major == 2
 import requests.exceptions
 from .events import from_json
 from .util import js_var, InvalidLogin, logger
 from .base import SockBase, PlugREST, PlugSock
+
 
 class PlugDJ(PlugREST):
     """ models actions and events of a single user. """

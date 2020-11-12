@@ -1,6 +1,5 @@
 import logging
 import threading
-from datetime import datetime, timedelta
 from . import PlugDJ
 from .events import from_json, Advance, MalformedEvent, Vote
 
